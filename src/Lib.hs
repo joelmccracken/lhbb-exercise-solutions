@@ -3,9 +3,10 @@
 module Lib (module Lib) where
 
 import Options.Applicative
-import Data.Text hiding (replicate, find, length)
+import Data.Text hiding (replicate, find, length, any)
 import Data.Maybe
 import Data.List (find)
+import Data.Char (isLetter)
 
 defaultNeedles :: Text
 defaultNeedles = "blue,green,yellow,orange,red,purple"
@@ -23,29 +24,25 @@ haystackArgumentParser = strArgument (metavar "HAYSTACK")
 needlesArgumentParser :: Parser Text
 needlesArgumentParser = pack <$> (option str (metavar "NEEDLES" <> long "needles" <> value (unpack defaultNeedles)))
 
-sample :: Parser KwdArgs
-sample = KwdArgs <$> haystackArgumentParser <*> needlesArgumentParser
+kwdArgsParser :: Parser KwdArgs
+kwdArgsParser = KwdArgs <$> haystackArgumentParser <*> needlesArgumentParser
 
 parserInfo :: ParserInfo KwdArgs
-parserInfo = info (sample <**> helper)
+parserInfo = info (kwdArgsParser <**> helper)
      (  fullDesc
      <> progDesc "Searches for favorite colors in HAYSTACK"
      <> header "kwd - your friendly neighborhood color searcher"
      )
 
-inHaystack :: Text -> Text -> Bool
-inHaystack haystack' needle = fst (breakOn needle haystack') /= haystack'
+inHaystack :: [Text] -> Text -> Bool
+inHaystack haystack' needle = any (needle ==) haystack'
 
 libMain :: IO ()
 libMain = do
   KwdArgs hs argNeedles <- execParser parserInfo
-  -- let needlesToUse =
-  --       if length argNeedles > 0 then
-  --         argNeedles
-  --       else
-  --         splitNeedles defaultNeedles
-  let searchResults = find (inHaystack hs) (splitNeedles argNeedles)
-  -- putStrLn $ show searchResults
+  let hs' = split (not . isLetter) $ toLower hs
+  let needles' = toLower <$> (splitNeedles argNeedles)
+  let searchResults = find (inHaystack hs') needles'
   if isJust searchResults then
     putStrLn "At least one keyword found!"
   else
