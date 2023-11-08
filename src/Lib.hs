@@ -3,7 +3,7 @@
 module Lib (module Lib) where
 
 import Options.Applicative
-import Data.Text hiding (replicate, find, length, any)
+import Data.Text hiding (replicate, find, any, filter)
 import Data.Maybe
 import Data.List (find)
 import Data.Char (isLetter)
@@ -37,13 +37,28 @@ parserInfo = info (kwdArgsParser <**> helper)
 inHaystack :: [Text] -> Text -> Bool
 inHaystack haystack' needle = any (needle ==) haystack'
 
+prepareHaystack :: Text -> [Text]
+prepareHaystack =
+    filter (not . (== mempty)) -- remove empty strings
+  . split (not . isLetter) -- split strings when non-letter-chracters are encountered
+  . toLower -- lowercase entire haystack (normalizing cases)
+
+-- wraps the entirety of the business logic
+-- extracted from the needs of being a CLI tool
+-- for testing
+seriousBusiness :: Text -> Text -> Bool
+seriousBusiness haystack' needlepile =
+  let
+    hs' = prepareHaystack haystack'
+    needles' = toLower <$> (splitNeedles needlepile)
+    searchResults = find (inHaystack hs') needles'
+  in
+    isJust searchResults
+
 libMain :: IO ()
 libMain = do
   KwdArgs hs argNeedles <- execParser parserInfo
-  let hs' = split (not . isLetter) $ toLower hs
-  let needles' = toLower <$> (splitNeedles argNeedles)
-  let searchResults = find (inHaystack hs') needles'
-  if isJust searchResults then
+  if seriousBusiness hs argNeedles then
     putStrLn "At least one keyword found!"
   else
     putStrLn "No keywords found."
