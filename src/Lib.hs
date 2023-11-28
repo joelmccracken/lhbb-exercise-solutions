@@ -1,10 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 
 module Lib (module Lib) where
 
+import RIO hiding (concat)
+
+import Prelude (putStrLn)
+
+import qualified RIO.HashMap as HM
+import qualified RIO.List as List
+
 import Options.Applicative
-import Data.Text hiding (replicate, find, any, filter)
-import Data.Maybe
+import Data.Text hiding (replicate, find, any, filter, foldl')
 import Data.List (find)
 import Data.Char (isLetter)
 
@@ -14,6 +21,13 @@ defaultNeedles = "blue,green,yellow,orange,red,purple"
 data KwdArgs = KwdArgs { haystack :: Text
                        , needles :: Text
                        }
+
+data Results
+  = Results
+  { hits :: HashMap Text Int
+  , other :: Int
+  }
+  deriving (Eq, Show)
 
 splitNeedles :: Text -> [Text]
 splitNeedles = split (== ',')
@@ -43,22 +57,47 @@ prepareHaystack =
   . split (not . isLetter) -- split strings when non-letter-chracters are encountered
   . toLower -- lowercase entire haystack (normalizing cases)
 
+searchHaystack :: [Text] -> [Text] -> Results -> Results
+searchHaystack needles' haystack' results =
+  let
+    examineWord :: Results -> Text -> Results
+    examineWord results' word =
+      let
+        res' =  find (== word) needles'
+      in
+        case res' of
+          Nothing -> results' { other = results'.other + 1 }
+          Just needle ->
+            results' { hits = HM.insertWith (+) needle 1 results'.hits }
+  in
+    foldl' examineWord results haystack'
+
 -- wraps the entirety of the business logic
 -- extracted from the needs of being a CLI tool
 -- for testing
-seriousBusiness :: Text -> Text -> Bool
+seriousBusiness :: Text -> Text -> Results
 seriousBusiness haystack' needlepile =
   let
+    results = Results HM.empty 0
     hs' = prepareHaystack haystack'
     needles' = toLower <$> (splitNeedles needlepile)
-    searchResults = find (inHaystack hs') needles'
+    _searchResults = find (inHaystack hs') needles'
+    searchResults = searchHaystack needles' hs' results
   in
-    isJust searchResults
+    searchResults
+
+displayResults :: Results -> Text
+displayResults results =
+ let
+   displayNeedleHits :: Text -> Int -> Text
+   displayNeedleHits needle hits' = needle <> ": " <> tshow hits' <> "\n"
+   hitsList = results.hits & HM.toList & List.sortOn (Down . snd)
+   rendered = hitsList <&> uncurry displayNeedleHits & concat
+ in
+   "Found keywords: \n" <> rendered <> "\nNon-keyword count: " <> tshow results.other
 
 libMain :: IO ()
 libMain = do
   KwdArgs hs argNeedles <- execParser parserInfo
-  if seriousBusiness hs argNeedles then
-    putStrLn "At least one keyword found!"
-  else
-    putStrLn "No keywords found."
+  let results = seriousBusiness hs argNeedles
+  displayResults results & unpack & putStrLn
