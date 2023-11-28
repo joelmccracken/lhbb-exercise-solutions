@@ -32,10 +32,11 @@ library
       Paths_lhbb
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XNoImplicitPrelude
   build-depends:
       base >=4.7 && <5
     , optparse-applicative
+    , rio
     , text
   default-language: Haskell2010
 
@@ -47,11 +48,12 @@ executable kwd
       Paths_lhbb
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XNoImplicitPrelude -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , lhbb
     , optparse-applicative
+    , rio
     , text
   default-language: Haskell2010
 
@@ -64,11 +66,12 @@ test-suite lhbb-test
       Paths_lhbb
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -XNoImplicitPrelude -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , hspec
     , lhbb
     , optparse-applicative
+    , rio
     , text
   default-language: Haskell2010
